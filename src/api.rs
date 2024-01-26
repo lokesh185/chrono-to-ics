@@ -48,15 +48,6 @@ impl Data {
             cr: courseresponse,
         })
     }
-    async fn fetch_courses(&mut self) -> Result<&mut Self, ()> {
-        reqwest::Client::new()
-            .get("https://www.chrono.crux-bphc.com/api/course")
-            .send()
-            .await
-            .unwrap()
-            .status();
-        Ok(self)
-    }
 }
 #[derive(Deserialize, Debug, Default)]
 struct TimeTableResponse {
