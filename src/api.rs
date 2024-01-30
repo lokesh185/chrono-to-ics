@@ -1,17 +1,14 @@
-use futures::future::ok;
-use iso8601::Date;
 use reqwest::Error;
-use serde::Deserialize;
 
-use crate::api::Responses::{CourseResponse, TimeTableResponse};
+use crate::api::responses::{CourseResponse, TimeTableResponse};
 // use time::format_description::well_known::{iso8601, Iso8601};
 #[derive(Debug)]
 pub struct Client {
     id: String,
-    ttr: Responses::TimeTableResponse,
-    cr: Responses::CourseResponse,
-    pub courses: Vec<Data::Course>,
-    // time_table: Data::TimeTable,
+    ttr: responses::TimeTableResponse,
+    cr: responses::CourseResponse,
+    pub courses: Vec<data::Course>,
+    // time_table: data::TimeTable,
 }
 
 impl Client {
@@ -33,9 +30,9 @@ impl Client {
             .cr
             .courses
             .iter()
-            .map(|course| match Data::Course::from_response_course(course) {
+            .map(|course| match data::Course::from_response_course(course) {
                 Ok(course_data) => course_data,
-                Err(_) => Data::Course::from_response_course_without_date_time(course),
+                Err(_) => data::Course::from_response_course_without_date_time(course),
             })
             .collect()
     }
@@ -50,7 +47,7 @@ impl Client {
         self.cr = match cresponse.status() {
             reqwest::StatusCode::OK => {
                 // on success, parse our JSON to an APIResponse
-                cresponse.json::<Responses::CourseResponse>().await?
+                cresponse.json::<responses::CourseResponse>().await?
             }
             other => {
                 panic!("unknown error {}", other);
@@ -69,7 +66,7 @@ impl Client {
         self.ttr = match response.status() {
             reqwest::StatusCode::OK => {
                 // on success, parse our JSON to an APIResponse
-                response.json::<Responses::TimeTableResponse>().await?
+                response.json::<responses::TimeTableResponse>().await?
             }
             other => {
                 panic!("unknown error {}", other);
@@ -78,7 +75,9 @@ impl Client {
         Ok(())
     }
 }
-mod Responses {
+#[allow(non_snake_case)]
+#[allow(dead_code)]
+mod responses {
     use serde::Deserialize;
 
     #[derive(Deserialize, Debug, Default)]
@@ -131,10 +130,11 @@ mod Responses {
         createdAt: String,
     }
 }
-
-pub mod Data {
-    use super::Responses;
-    use iso8601::{DateTime, Time};
+#[allow(non_snake_case)]
+#[allow(dead_code)]
+pub mod data {
+    use super::responses;
+    use iso8601::DateTime;
     #[derive(Debug)]
     pub struct TimeTable {}
     #[derive(Debug)]
@@ -146,7 +146,7 @@ pub mod Data {
         compre_time: Option<(DateTime, DateTime)>,
     }
     impl Course {
-        pub fn from_response_course(course: &Responses::Course) -> Result<Self, String> {
+        pub fn from_response_course(course: &responses::Course) -> Result<Self, String> {
             let compre_time: Option<(DateTime, DateTime)> = if let (Some(start), Some(end)) =
                 (&course.compreStartTime, &course.compreEndTime)
             {
@@ -169,7 +169,7 @@ pub mod Data {
                 compre_time,
             })
         }
-        pub fn from_response_course_without_date_time(course: &Responses::Course) -> Self {
+        pub fn from_response_course_without_date_time(course: &responses::Course) -> Self {
             Self {
                 id: course.id.clone(),
                 code: course.code.clone(),
