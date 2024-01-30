@@ -18,8 +18,6 @@ async fn main() {
     let m = Arguments::parse();
     dbg!(&m);
     let id = m.link.split('/').last().unwrap().to_string();
-    let data = api::Data::new(id).await.unwrap();
-    dbg!(&data);
-    let datetime = iso8601::datetime("2023-05-17T08:30:00.000Z").unwrap();
-    dbg!(iso8601::datetime("2023-05-17T08:30:00.000Z").unwrap());
+    let data = api::Client::new(id).await.unwrap();
+    dbg!(&data.courses);
 }
