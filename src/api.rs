@@ -2,6 +2,8 @@ use futures::future::ok;
 use iso8601::Date;
 use reqwest::Error;
 use serde::Deserialize;
+
+use crate::api::Responses::{CourseResponse, TimeTableResponse};
 // use time::format_description::well_known::{iso8601, Iso8601};
 #[derive(Debug)]
 pub struct Client {
@@ -14,47 +16,18 @@ pub struct Client {
 
 impl Client {
     pub async fn new(id: String) -> Result<Self, Error> {
-        let api_link = format!("https://www.chrono.crux-bphc.com/api/timetable/{}", &id);
-        let client = reqwest::Client::new();
-        let response = client.get(api_link).send().await.unwrap();
-
-        let timetableresponse = match response.status() {
-            reqwest::StatusCode::OK => {
-                // on success, parse our JSON to an APIResponse
-                response.json::<Responses::TimeTableResponse>().await?
-            }
-            other => {
-                panic!("unknown error {}", other);
-            }
-        };
-        dbg!(&timetableresponse);
-        let client = reqwest::Client::new();
-
-        let cresponse = client
-            .get("https://www.chrono.crux-bphc.com/api/course")
-            .send()
-            .await
-            .unwrap();
-        // dbg!(&cresponse);
-        let course_response = match cresponse.status() {
-            reqwest::StatusCode::OK => {
-                // on success, parse our JSON to an APIResponse
-                cresponse.json::<Responses::CourseResponse>().await?
-            }
-            other => {
-                panic!("unknown error {}", other);
-            }
-        };
-        let mut clinet = Self {
+        let mut client = Self {
             id,
-            ttr: timetableresponse,
-            cr: course_response,
+            ttr: TimeTableResponse::default(),
+            cr: CourseResponse::default(),
             courses: vec![],
         };
-        clinet.parse_courses();
-        // dbg!(&timetableresponse, &courseresponse);
-        Ok(clinet)
+        client.parse_courses();
+        client.fetch_courses().await.unwrap();
+        client.fetch_timetable().await.unwrap();
+        Ok(client)
     }
+
     fn parse_courses(&mut self) {
         self.courses = self
             .cr
@@ -65,6 +38,44 @@ impl Client {
                 Err(_) => Data::Course::from_response_course_without_date_time(course),
             })
             .collect()
+    }
+    async fn fetch_courses(&mut self) -> Result<(), Error> {
+        let client = reqwest::Client::new();
+        let cresponse = client
+            .get("https://www.chrono.crux-bphc.com/api/course")
+            .send()
+            .await
+            .unwrap();
+        // dbg!(&cresponse);
+        self.cr = match cresponse.status() {
+            reqwest::StatusCode::OK => {
+                // on success, parse our JSON to an APIResponse
+                cresponse.json::<Responses::CourseResponse>().await?
+            }
+            other => {
+                panic!("unknown error {}", other);
+            }
+        };
+        Ok(())
+    }
+    async fn fetch_timetable(&mut self) -> Result<(), Error> {
+        let client = reqwest::Client::new();
+        let api_link = format!(
+            "https://www.chrono.crux-bphc.com/api/timetable/{}",
+            &self.id
+        );
+        let response = client.get(api_link).send().await.unwrap();
+
+        self.ttr = match response.status() {
+            reqwest::StatusCode::OK => {
+                // on success, parse our JSON to an APIResponse
+                response.json::<Responses::TimeTableResponse>().await?
+            }
+            other => {
+                panic!("unknown error {}", other);
+            }
+        };
+        Ok(())
     }
 }
 mod Responses {
@@ -99,10 +110,10 @@ mod Responses {
     }
     #[derive(Deserialize, Debug, Default)]
     #[serde(transparent)]
-
     pub struct CourseResponse {
         pub courses: Vec<Course>,
     }
+
     #[derive(Deserialize, Debug, Default)]
 
     pub struct Course {
