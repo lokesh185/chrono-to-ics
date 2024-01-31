@@ -1,7 +1,6 @@
-use chrono_to_ics::api::{self, data::Timing};
+use chrono_to_ics::api::{client::Client, data::Timing};
 use clap::Parser;
 use std::path::PathBuf;
-
 // #[command(author, version, about, long_about = None)]
 /// program that converts chrono factorem calendars to .ics files
 #[derive(Parser, Default, Debug)]
@@ -18,7 +17,7 @@ async fn main() {
     let m = Arguments::parse();
     dbg!(&m);
     let id = m.link.split('/').last().unwrap().to_string();
-    let client = api::Client::new(id).await.unwrap();
+    let client = Client::new(id).await.unwrap();
     // dbg!(&client);
     let new = Timing::from_string("GS F345:Th3");
     dbg!(new);
