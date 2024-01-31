@@ -1,11 +1,12 @@
-use crate::api::data::{Course, CourseName, TimeTable};
+use crate::api::data::{Course, TimeTable};
 use crate::api::responses::{CourseResponse, TimeTableResponse};
 use reqwest::Error;
+#[derive(Debug)]
 pub struct Client {
     id: String,
     pub ttr: TimeTableResponse,
     cr: CourseResponse,
-    pub courses: Vec<CourseName>,
+    timetable: TimeTable,
     // time_table: data::TimeTable,
 }
 
@@ -15,21 +16,16 @@ impl Client {
             id,
             ttr: TimeTableResponse::default(),
             cr: CourseResponse::default(),
-            courses: vec![],
+            timetable: TimeTable::default(),
         };
-        client.parse_courses();
+
         client.fetch_courses().await.unwrap();
         client.fetch_timetable().await.unwrap();
+        client.update_time_table();
         Ok(client)
     }
-
-    fn parse_courses(&mut self) {
-        self.courses = self
-            .cr
-            .courses
-            .iter()
-            .map(|course| CourseName::from_response_course(course))
-            .collect()
+    fn update_time_table(&mut self) {
+        self.timetable = TimeTable::new(&self.ttr);
     }
     async fn fetch_courses(&mut self) -> Result<(), Error> {
         let client = reqwest::Client::new();

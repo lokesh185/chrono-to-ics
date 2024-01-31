@@ -1,21 +1,6 @@
-use crate::api::responses;
+use super::responses::TimeTableResponse;
+use clap::builder::Str;
 use iso8601::DateTime;
-
-#[derive(Debug)]
-pub struct CourseName {
-    pub id: String,
-    pub code: String,
-    pub name: String,
-}
-impl CourseName {
-    pub fn from_response_course(course: &responses::Course) -> Self {
-        Self {
-            id: course.id.clone(),
-            code: course.code.clone(),
-            name: course.name.clone(),
-        }
-    }
-}
 #[derive(Debug)]
 pub enum TimingError {
     BadStringFormat,
@@ -96,15 +81,70 @@ impl Timing {
         }
     }
 }
-
+#[derive(Debug, Default)]
 pub struct Course {
     code: String,
-    name: String,
-    timings: Vec<Timing>,
+    name: Option<String>,
+    pub timings: Vec<Timing>,
+    pub midsem_date_time: Option<(DateTime, DateTime)>,
+    pub compre_date_time: Option<(DateTime, DateTime)>,
 }
-#[derive(Debug)]
+impl Course {
+    fn push_timing(&mut self, timing: Timing) {
+        self.timings.push(timing)
+    }
+    fn from_timing(timing: Timing) -> Self {
+        Self {
+            code: timing.code.clone(),
+            name: None,
+            timings: vec![timing],
+            midsem_date_time: None,
+            compre_date_time: None,
+        }
+    }
+    fn optimize_timings(&mut self) {
+        for timing in &self.timings {
+            for timing in &self.timings {}
+        }
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct TimeTable {
     id: String,
     name: String,
-    acad_year: String,
+    acad_year: i32,
+    courses: Vec<Course>,
+}
+impl TimeTable {
+    pub fn new(time_table_response: &TimeTableResponse) -> Self {
+        let mut timings = time_table_response
+            .timings
+            .iter()
+            .filter_map(|time_info| match Timing::from_string(time_info) {
+                Ok(timing) => Some(timing),
+                Err(_) => None,
+            })
+            .collect::<Vec<Timing>>();
+        let mut courses: Vec<Course> = vec![];
+        timings.into_iter().for_each(|timing| {
+            dbg!(&timing);
+            match courses
+                .iter_mut()
+                .find_map(|course| match course.code.eq(&timing.code) {
+                    true => Some(course),
+                    false => None,
+                }) {
+                Some(course) => course.push_timing(timing),
+
+                None => courses.push(Course::from_timing(timing)),
+            }
+        });
+        Self {
+            id: time_table_response.id.clone(),
+            name: time_table_response.name.clone(),
+            acad_year: time_table_response.acadYear,
+            courses: courses,
+        }
+    }
 }

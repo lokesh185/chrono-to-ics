@@ -2,17 +2,17 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Default)]
 pub struct TimeTableResponse {
-    id: String,
+    pub id: String,
     authorId: String,
-    name: String,
+    pub name: String,
     degrees: Vec<String>,
     private: bool,
     draft: bool,
     archived: bool,
     year: i32,
-    acadYear: i32,
-    timings: Vec<String>,
-    examTimes: Vec<String>,
+    pub acadYear: i32,
+    pub timings: Vec<String>,
+    pub examTimes: Vec<String>,
     warnings: Vec<String>,
     createdAt: String,
     lastUpdated: String,
