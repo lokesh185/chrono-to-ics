@@ -1,6 +1,6 @@
-use super::responses::TimeTableResponse;
-use clap::builder::Str;
+use super::responses::{CourseResponse, SectionResponse, TimeTableResponse};
 use iso8601::DateTime;
+use regex;
 #[derive(Debug)]
 pub enum TimingError {
     BadStringFormat,
@@ -9,7 +9,7 @@ pub enum TimingError {
     InvalidTime,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Day {
     Monday,
     Tuesday,
@@ -18,93 +18,121 @@ pub enum Day {
     Friday,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Timing {
-    code: String,
     day: Day,
+    classroom: String,
     start: u8,
     end: u8,
 }
 
 impl Timing {
-    pub fn from_string(info: &str) -> Result<Self, TimingError> {
-        let mut parts_iter = info.split(':').collect::<Vec<&str>>().into_iter();
-        if let (Some(code), Some(timing_info)) = (parts_iter.next(), parts_iter.next()) {
-            let mut timing_info_iter = timing_info.chars();
-            if let (Some(char1), Some(char2)) = (timing_info_iter.next(), timing_info_iter.next()) {
-                let day = match char1 {
-                    'M' => Day::Monday,
-                    'W' => Day::Wednesday,
-                    'T' => match char2 {
-                        'h' => Day::Thursday,
-                        _ => Day::Tuesday,
-                    },
-                    'F' => Day::Friday,
-                    _ => return Err(TimingError::InvalidDay),
-                };
-                let optional_char3 = timing_info_iter.next();
-                let time_string = match day {
-                    Day::Thursday => match optional_char3 {
-                        Some(char3) => {
-                            if let Some(char4) = timing_info_iter.next() {
-                                format!("{}{}", char3, char4)
-                            } else {
-                                char3.to_string()
-                            }
-                        }
-                        None => {
-                            return Err(TimingError::InvalidTime);
-                        }
-                    },
-                    _ => match optional_char3 {
-                        Some(char3) => format!("{}{}", char2, char3),
-                        None => char2.to_string(),
-                    },
-                };
-                let time = match time_string.parse::<u8>() {
-                    Ok(value) => value,
-                    Err(_) => {
-                        return Err(TimingError::InvalidTime);
-                    }
-                };
-                Ok(Self {
-                    code: code.to_string(),
-                    day,
-                    start: time,
-                    end: time,
-                })
-            } else {
-                return Err(TimingError::InvalidTimingFormat);
+    pub fn from_string(info: &str) -> Option<Self> {
+        let re = regex::Regex::new(r"\w+ \w\d{3}:(\w\d{3}):(\w+):(\d+)").unwrap();
+
+        let Some(caps) = re.captures(&info) else {
+            return None;
+        };
+        // dbg!(&caps);
+        // let code = caps.get(1).unwrap().as_str().to_string();
+        let classroom = caps.get(1).unwrap().as_str().to_string();
+        let day = match caps.get(2).unwrap().as_str() {
+            "M" => Day::Monday,
+            "T" => Day::Tuesday,
+            "W" => Day::Wednesday,
+            "Th" => Day::Thursday,
+            "F" => Day::Friday,
+            _ => {
+                return None;
             }
-        } else {
-            Err(TimingError::BadStringFormat)
-        }
+        };
+        let time = caps.get(3).unwrap().as_str().parse::<u8>().unwrap();
+        Some(Timing {
+            day,
+            classroom,
+            start: time,
+            end: time,
+        })
+    }
+}
+#[derive(Debug)]
+pub struct Section {
+    number: i32,
+    instructors: Vec<String>,
+    timings: Vec<Timing>,
+}
+impl Section {
+    pub fn optimize_timings(&mut self) {
+        let mut new_timings: Vec<Timing> = vec![];
+        self.timings.iter().for_each(|timing| {
+            match new_timings.iter_mut().find(|new_timing| {
+                (new_timing.day == timing.day)
+                    && ((new_timing.start == timing.end + 1)
+                        || (new_timing.end + 1 == timing.start))
+            }) {
+                Some(new_timing) => {
+                    if new_timing.start == timing.end + 1 {
+                        new_timing.start -= 1;
+                    } else {
+                        new_timing.end += 1;
+                    }
+                }
+                None => new_timings.push(timing.clone()),
+            }
+        });
+        self.timings = new_timings;
     }
 }
 #[derive(Debug, Default)]
 pub struct Course {
+    id: String,
     code: String,
-    name: Option<String>,
-    pub timings: Vec<Timing>,
+    name: String,
+    pub lecture: Option<Section>,
+    pub tutorial: Option<Section>,
+    pub lab: Option<Section>,
     pub midsem_date_time: Option<(DateTime, DateTime)>,
     pub compre_date_time: Option<(DateTime, DateTime)>,
 }
 impl Course {
-    fn push_timing(&mut self, timing: Timing) {
-        self.timings.push(timing)
+    fn new(id: String, course_response: &CourseResponse) -> Option<Self> {
+        course_response
+            .courses
+            .iter()
+            .find_map(|course| match course.id.eq(&id) {
+                true => Some(Self {
+                    id: id.clone(),
+                    code: course.code.clone(),
+                    name: course.name.clone(),
+                    lecture: None,
+                    tutorial: None,
+                    lab: None,
+                    midsem_date_time: None,
+                    compre_date_time: None,
+                }),
+                false => None,
+            })
     }
-    fn from_timing(timing: Timing) -> Self {
-        Self {
-            code: timing.code.clone(),
-            name: None,
-            timings: vec![timing],
-            midsem_date_time: None,
-            compre_date_time: None,
-        }
-    }
-    fn optimize_timings(&mut self) {
-        for timing in &self.timings {
-            for timing in &self.timings {}
+    fn add_section(&mut self, section_response: &SectionResponse) {
+        let timings = section_response
+            .roomTime
+            .iter()
+            .filter_map(|info| match Timing::from_string(info) {
+                Some(timing) => Some(timing),
+                None => None,
+            })
+            .collect::<Vec<Timing>>();
+        let mut new_section = Section {
+            number: section_response.number,
+            instructors: section_response.instructors.clone(),
+            timings: timings,
+        };
+        new_section.optimize_timings();
+        match section_response.type_name.as_str() {
+            "P" => self.lab = Some(new_section),
+            "T" => self.tutorial = Some(new_section),
+            "L" => self.lecture = Some(new_section),
+            _ => {}
         }
     }
 }
@@ -117,29 +145,32 @@ pub struct TimeTable {
     courses: Vec<Course>,
 }
 impl TimeTable {
-    pub fn new(time_table_response: &TimeTableResponse) -> Self {
-        let mut timings = time_table_response
-            .timings
-            .iter()
-            .filter_map(|time_info| match Timing::from_string(time_info) {
-                Ok(timing) => Some(timing),
-                Err(_) => None,
-            })
-            .collect::<Vec<Timing>>();
+    pub fn new(time_table_response: &TimeTableResponse, course_response: &CourseResponse) -> Self {
         let mut courses: Vec<Course> = vec![];
-        timings.into_iter().for_each(|timing| {
-            dbg!(&timing);
-            match courses
-                .iter_mut()
-                .find_map(|course| match course.code.eq(&timing.code) {
-                    true => Some(course),
-                    false => None,
+        time_table_response
+            .sections
+            .iter()
+            .for_each(|section_response| {
+                match courses.iter_mut().find_map(|course| {
+                    match course.id.eq(&section_response.courseId) {
+                        true => Some(course),
+                        false => None,
+                    }
                 }) {
-                Some(course) => course.push_timing(timing),
+                    Some(course) => {
+                        course.add_section(section_response);
+                    }
+                    None => {
+                        if let Some(mut course) =
+                            Course::new(section_response.courseId.clone(), course_response)
+                        {
+                            course.add_section(section_response);
+                            courses.push(course)
+                        }
+                    }
+                };
+            });
 
-                None => courses.push(Course::from_timing(timing)),
-            }
-        });
         Self {
             id: time_table_response.id.clone(),
             name: time_table_response.name.clone(),

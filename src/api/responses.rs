@@ -11,6 +11,7 @@ pub struct TimeTableResponse {
     archived: bool,
     year: i32,
     pub acadYear: i32,
+    pub sections: Vec<SectionResponse>,
     pub timings: Vec<String>,
     pub examTimes: Vec<String>,
     warnings: Vec<String>,
@@ -18,13 +19,14 @@ pub struct TimeTableResponse {
     lastUpdated: String,
 }
 #[derive(Deserialize, Debug, Default)]
-pub struct Section {
+pub struct SectionResponse {
     id: String,
-    courseId: String,
+    pub courseId: String,
     #[serde(rename = "type")]
-    type_name: String,
-    instructors: Vec<String>,
-    roomTime: Vec<String>,
+    pub type_name: String,
+    pub number: i32,
+    pub instructors: Vec<String>,
+    pub roomTime: Vec<String>,
     createdAt: String,
 }
 #[derive(Deserialize, Debug, Default)]
@@ -39,13 +41,4 @@ pub struct Course {
     pub id: String,
     pub code: String,
     pub name: String,
-    // time uses this format yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
-    pub midesmStartTime: Option<String>,
-    pub midesmEndTime: Option<String>,
-    pub compreStartTime: Option<String>,
-    pub compreEndTime: Option<String>,
-    archived: bool,
-    acadYear: i32,
-    semester: i32,
-    createdAt: String,
 }

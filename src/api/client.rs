@@ -1,4 +1,4 @@
-use crate::api::data::{Course, TimeTable};
+use crate::api::data::TimeTable;
 use crate::api::responses::{CourseResponse, TimeTableResponse};
 use reqwest::Error;
 #[derive(Debug)]
@@ -6,7 +6,7 @@ pub struct Client {
     id: String,
     pub ttr: TimeTableResponse,
     cr: CourseResponse,
-    timetable: TimeTable,
+    pub timetable: TimeTable,
     // time_table: data::TimeTable,
 }
 
@@ -25,7 +25,7 @@ impl Client {
         Ok(client)
     }
     fn update_time_table(&mut self) {
-        self.timetable = TimeTable::new(&self.ttr);
+        self.timetable = TimeTable::new(&self.ttr, &self.cr);
     }
     async fn fetch_courses(&mut self) -> Result<(), Error> {
         let client = reqwest::Client::new();
