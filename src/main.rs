@@ -1,4 +1,4 @@
-use chrono_to_ics::api;
+use chrono_to_ics::api::{self, data::Timing};
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -18,6 +18,8 @@ async fn main() {
     let m = Arguments::parse();
     dbg!(&m);
     let id = m.link.split('/').last().unwrap().to_string();
-    let data = api::Client::new(id).await.unwrap();
-    dbg!(&data.courses);
+    let client = api::Client::new(id).await.unwrap();
+    // dbg!(&client);
+    let new = Timing::from_string("GS F345:Th3");
+    dbg!(new);
 }
