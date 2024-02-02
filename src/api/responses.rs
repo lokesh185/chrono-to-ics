@@ -34,12 +34,12 @@ pub struct Course {
     pub name: String,
 }
 #[derive(Deserialize, Debug, Default)]
-pub struct Holiday {
+pub struct HolidayString {
     pub name: String,
-    pub day: String,
+    pub date: String,
 }
 #[derive(Deserialize, Debug, Default)]
-pub struct TimeTableChange {
+pub struct TimeTableChangeResponse {
     pub date: String,
     pub day: String,
 }
@@ -49,6 +49,6 @@ pub struct HolidayResponse {
     pub classwork_end: String,
     pub midsem_start: String,
     pub midsem_end: String,
-    pub holidays: Vec<Holiday>,
-    pub time_table_changes: Vec<TimeTableChange>,
+    pub holidays: Vec<HolidayString>,
+    pub time_table_changes: Vec<TimeTableChangeResponse>,
 }

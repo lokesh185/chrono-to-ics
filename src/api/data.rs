@@ -1,6 +1,6 @@
-use std::{error::Error, str::FromStr};
+use std::{error::Error, str::FromStr, vec};
 
-use super::responses::{CourseResponse, SectionResponse, TimeTableResponse};
+use super::responses::{CourseResponse, HolidayResponse, SectionResponse, TimeTableResponse};
 use iso8601::{Date, DateTime};
 use regex;
 
@@ -12,7 +12,23 @@ pub enum Day {
     Thursday,
     Friday,
 }
-
+impl Day {
+    fn from_str(day_string: &str) -> Result<Self, regex::Error> {
+        Ok(match day_string {
+            "M" => Self::Monday,
+            "T" => Self::Tuesday,
+            "W" => Self::Wednesday,
+            "Th" => Self::Thursday,
+            "F" => Self::Friday,
+            _ => {
+                return Err(regex::Error::Syntax(format!(
+                    "Invalid day string {}",
+                    day_string
+                )));
+            }
+        })
+    }
+}
 #[derive(Debug, Clone)]
 pub struct Timing {
     day: Day,
@@ -112,10 +128,7 @@ impl Course {
         let timings = section_response
             .roomTime
             .iter()
-            .filter_map(|info| match Timing::from_string(info) {
-                Some(timing) => Some(timing),
-                None => None,
-            })
+            .filter_map(|info| Timing::from_string(info))
             .collect::<Vec<Timing>>();
         let mut new_section = Section {
             number: section_response.number,
@@ -149,16 +162,34 @@ impl Course {
             })
     }
 }
-
 #[derive(Debug, Default)]
+struct Holiday {
+    name: String,
+    date: Date,
+}
+#[derive(Debug)]
+struct TimeTableChange {
+    day: Day,
+    date: Date,
+}
+#[derive(Debug)]
 pub struct TimeTable {
     id: String,
     name: String,
     acad_year: i32,
+    pub classwork_start: Date,
+    pub classwork_end: Date,
+    pub midsem_dates: Option<(Date, Date)>,
     courses: Vec<Course>,
+    holidays: Vec<Holiday>,
+    time_table_changes: Vec<TimeTableChange>,
 }
 impl TimeTable {
-    pub fn new(time_table_response: &TimeTableResponse, course_response: &CourseResponse) -> Self {
+    pub fn new(
+        time_table_response: &TimeTableResponse,
+        course_response: &CourseResponse,
+        holiday_response: &HolidayResponse,
+    ) -> Option<Self> {
         let mut courses: Vec<Course> = vec![];
         time_table_response
             .sections
@@ -186,21 +217,51 @@ impl TimeTable {
         let exam_times = time_table_response
             .examTimes
             .iter()
-            .filter_map(|info| match ExamTime::from_string(info.clone()) {
-                Ok(exam_time) => Some(exam_time),
-                Err(_) => None,
-            })
+            .filter_map(|info| ExamTime::from_string(info.clone()).ok())
             .collect::<Vec<ExamTime>>();
 
         courses
             .iter_mut()
             .for_each(|course| course.update_exam_time(&exam_times));
-        Self {
+
+        let holidays = holiday_response
+            .holidays
+            .iter()
+            .filter_map(|holiday_string| {
+                Some(Holiday {
+                    name: holiday_string.name.clone(),
+                    date: Date::from_str(holiday_string.date.as_str()).ok()?,
+                })
+            })
+            .collect::<Vec<Holiday>>();
+        let time_table_changes = holiday_response
+            .time_table_changes
+            .iter()
+            .filter_map(|ttcr| {
+                Some(TimeTableChange {
+                    date: Date::from_str(&ttcr.date).ok()?,
+                    day: Day::from_str(&ttcr.day).ok()?,
+                })
+            })
+            .collect::<Vec<TimeTableChange>>();
+        Some(Self {
             id: time_table_response.id.clone(),
             name: time_table_response.name.clone(),
             acad_year: time_table_response.acadYear,
-            courses: courses,
-        }
+            courses,
+            holidays,
+            time_table_changes,
+            midsem_dates: if let (Ok(midsem_st), Ok(midsem_end)) = (
+                Date::from_str(&holiday_response.midsem_start),
+                Date::from_str(&holiday_response.midsem_end),
+            ) {
+                Some((midsem_st, midsem_end))
+            } else {
+                None
+            },
+            classwork_start: Date::from_str(&holiday_response.classwork_start).ok()?,
+            classwork_end: Date::from_str(&holiday_response.classwork_end).ok()?,
+        })
     }
 }
 pub enum ExamKind {
@@ -222,7 +283,6 @@ impl ExamTime {
                 "required values not found in string".to_string(),
             ));
         };
-        dbg!(&caps);
         Ok(Self {
             code: match caps.get(1) {
                 Some(capture) => capture,
