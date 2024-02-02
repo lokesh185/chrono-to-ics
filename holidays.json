@@ -1,0 +1,62 @@
+{
+    "classwork_start": "2024-01-10",
+    "classwork_end": "2024-05-03",
+    "midsem_start": "2024-03-11",
+    "midsem_end": "2024-03-16",
+    "holidays": [
+        {
+            "name": "Makar Sankranti (H)",
+            "date": "2024-01-15"
+        },
+        {
+            "name": "Republic Day (H)",
+            "date": "2024-01-26"
+        },
+        {
+            "name": "Maha Shivratri (H)",
+            "date": "2024-03-08"
+        },
+        {
+            "name": "Holi (H)",
+            "date": "2024-03-25"
+        },
+        {
+            "name": "Good Friday (H)",
+            "date": "2024-03-29"
+        },
+        {
+            "name": "Cultural fest, PEARL, (Classwork Suspended)",
+            "date": "2024-03-29"
+        },
+        {
+            "name": "Ugadi",
+            "date": "2024-04-09"
+        },
+        {
+            "name": "Id-ul-Fitr*(H)",
+            "date": "2024-04-11"
+        },
+        {
+            "name": "Ambedkar Jayanti (H)",
+            "date": "2024-04-14"
+        },
+        {
+            "name": "Ram Navami (H)",
+            "date": "2024-04-17"
+        },
+        {
+            "name": "Mahavir Jayanti (H)",
+            "date": "2024-04-21"
+        }
+    ],
+    "time_table_changes": [
+        {
+            "date": "2024-02-08",
+            "day": "M"
+        },
+        {
+            "date": "2024-04-03",
+            "day": "M"
+        }
+    ]
+}
