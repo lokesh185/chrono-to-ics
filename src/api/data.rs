@@ -1,4 +1,4 @@
-use std::{error::Error, str::FromStr, vec};
+use std::{str::FromStr, vec};
 
 use super::responses::{CourseResponse, HolidayResponse, SectionResponse, TimeTableResponse};
 use iso8601::{Date, DateTime};
@@ -141,9 +141,9 @@ impl Course {
             "T" => self.tutorial = Some(new_section),
             "L" => self.lecture = Some(new_section),
             _ => {}
-        }
+        };
     }
-    fn update_exam_time(&mut self, exam_times: &Vec<ExamTime>) {
+    fn update_exam_time(&mut self, exam_times: &[ExamTime]) {
         exam_times
             .iter()
             .filter_map(|f| match f.code.eq(&self.code) {
@@ -159,7 +159,7 @@ impl Course {
                     self.compre_date_time =
                         Some((exam_time.start_date_time, exam_time.end_date_time))
                 }
-            })
+            });
     }
 }
 #[derive(Debug, Default)]
