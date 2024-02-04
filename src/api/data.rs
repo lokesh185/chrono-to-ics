@@ -1,37 +1,41 @@
-use std::{str::FromStr, vec};
-
 use super::responses::{CourseResponse, HolidayResponse, SectionResponse, TimeTableResponse};
-use iso8601::{Date, DateTime};
+use chrono::{DateTime, Local, Utc, Weekday};
 use regex;
+use reqwest::header::LOCATION;
+use std::{fmt, str::FromStr, vec};
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Day {
-    Monday,
-    Tuesday,
-    Wednesday,
-    Thursday,
-    Friday,
+#[derive(Debug, Clone)]
+struct DayError;
+impl fmt::Display for DayError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "invalid string to parse to day")
+    }
 }
-impl Day {
-    fn from_str(day_string: &str) -> Result<Self, regex::Error> {
-        Ok(match day_string {
-            "M" => Self::Monday,
-            "T" => Self::Tuesday,
-            "W" => Self::Wednesday,
-            "Th" => Self::Thursday,
-            "F" => Self::Friday,
+#[derive(Debug)]
+struct WeekdayWrapper(Weekday);
+impl WeekdayWrapper {
+    pub fn to_weekday(self) -> Weekday {
+        self.0
+    }
+}
+impl FromStr for WeekdayWrapper {
+    type Err = DayError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(WeekdayWrapper(match s {
+            "M" => Weekday::Mon,
+            "T" => Weekday::Tue,
+            "W" => Weekday::Wed,
+            "Th" => Weekday::Thu,
+            "F" => Weekday::Fri,
             _ => {
-                return Err(regex::Error::Syntax(format!(
-                    "Invalid day string {}",
-                    day_string
-                )));
+                return Err(DayError);
             }
-        })
+        }))
     }
 }
 #[derive(Debug, Clone)]
 pub struct Timing {
-    day: Day,
+    day: Weekday,
     classroom: String,
     start: u8,
     end: u8,
@@ -47,16 +51,13 @@ impl Timing {
         // dbg!(&caps);
         // let code = caps.get(1).unwrap().as_str().to_string();
         let classroom = caps.get(1).unwrap().as_str().to_string();
-        let day = match caps.get(2).unwrap().as_str() {
-            "M" => Day::Monday,
-            "T" => Day::Tuesday,
-            "W" => Day::Wednesday,
-            "Th" => Day::Thursday,
-            "F" => Day::Friday,
-            _ => {
-                return None;
-            }
-        };
+        let day = caps
+            .get(2)
+            .unwrap()
+            .as_str()
+            .parse::<WeekdayWrapper>()
+            .unwrap()
+            .to_weekday();
         let time = caps.get(3).unwrap().as_str().parse::<u8>().unwrap();
         Some(Timing {
             day,
@@ -102,8 +103,8 @@ pub struct Course {
     pub lecture: Option<Section>,
     pub tutorial: Option<Section>,
     pub lab: Option<Section>,
-    pub midsem_date_time: Option<(DateTime, DateTime)>,
-    pub compre_date_time: Option<(DateTime, DateTime)>,
+    pub midsem_date_time: Option<(DateTime<Utc>, DateTime<Utc>)>,
+    pub compre_date_time: Option<(DateTime<Utc>, DateTime<Utc>)>,
 }
 impl Course {
     fn new(id: String, course_response: &CourseResponse) -> Option<Self> {
@@ -152,12 +153,16 @@ impl Course {
             })
             .for_each(|exam_time| match exam_time.exam_type {
                 ExamKind::Midsem => {
-                    self.midsem_date_time =
-                        Some((exam_time.start_date_time, exam_time.end_date_time))
+                    self.midsem_date_time = Some((
+                        exam_time.start_date_time.into(),
+                        exam_time.end_date_time.into(),
+                    ))
                 }
                 ExamKind::Compre => {
-                    self.compre_date_time =
-                        Some((exam_time.start_date_time, exam_time.end_date_time))
+                    self.compre_date_time = Some((
+                        exam_time.start_date_time.into(),
+                        exam_time.end_date_time.into(),
+                    ))
                 }
             });
     }
@@ -165,21 +170,21 @@ impl Course {
 #[derive(Debug, Default)]
 struct Holiday {
     name: String,
-    date: Date,
+    date: DateTime<Local>,
 }
 #[derive(Debug)]
 struct TimeTableChange {
-    day: Day,
-    date: Date,
+    day: Weekday,
+    date: DateTime<Local>,
 }
 #[derive(Debug)]
 pub struct TimeTable {
     id: String,
     name: String,
     acad_year: i32,
-    pub classwork_start: Date,
-    pub classwork_end: Date,
-    pub midsem_dates: Option<(Date, Date)>,
+    pub classwork_start: DateTime<Local>,
+    pub classwork_end: DateTime<Local>,
+    pub midsem_dates: Option<(DateTime<Local>, DateTime<Local>)>,
     courses: Vec<Course>,
     holidays: Vec<Holiday>,
     time_table_changes: Vec<TimeTableChange>,
@@ -219,10 +224,12 @@ impl TimeTable {
             .iter()
             .filter_map(|info| ExamTime::from_string(info.clone()).ok())
             .collect::<Vec<ExamTime>>();
+        dbg!(&courses);
 
         courses
             .iter_mut()
             .for_each(|course| course.update_exam_time(&exam_times));
+        dbg!(&courses);
 
         let holidays = holiday_response
             .holidays
@@ -230,17 +237,22 @@ impl TimeTable {
             .filter_map(|holiday_string| {
                 Some(Holiday {
                     name: holiday_string.name.clone(),
-                    date: Date::from_str(holiday_string.date.as_str()).ok()?,
+                    date: holiday_string
+                        .date
+                        .as_str()
+                        .parse::<DateTime<Local>>()
+                        .ok()?,
                 })
             })
             .collect::<Vec<Holiday>>();
+        dbg!(&holidays);
         let time_table_changes = holiday_response
             .time_table_changes
             .iter()
             .filter_map(|ttcr| {
                 Some(TimeTableChange {
-                    date: Date::from_str(&ttcr.date).ok()?,
-                    day: Day::from_str(&ttcr.day).ok()?,
+                    date: ttcr.date.parse::<DateTime<Local>>().ok()?,
+                    day: ttcr.day.parse::<WeekdayWrapper>().ok()?.to_weekday(),
                 })
             })
             .collect::<Vec<TimeTableChange>>();
@@ -252,15 +264,21 @@ impl TimeTable {
             holidays,
             time_table_changes,
             midsem_dates: if let (Ok(midsem_st), Ok(midsem_end)) = (
-                Date::from_str(&holiday_response.midsem_start),
-                Date::from_str(&holiday_response.midsem_end),
+                holiday_response.midsem_start.parse::<DateTime<Local>>(),
+                holiday_response.midsem_end.parse::<DateTime<Local>>(),
             ) {
                 Some((midsem_st, midsem_end))
             } else {
                 None
             },
-            classwork_start: Date::from_str(&holiday_response.classwork_start).ok()?,
-            classwork_end: Date::from_str(&holiday_response.classwork_end).ok()?,
+            classwork_start: holiday_response
+                .classwork_start
+                .parse::<DateTime<Local>>()
+                .ok()?,
+            classwork_end: holiday_response
+                .classwork_end
+                .parse::<DateTime<Local>>()
+                .ok()?,
         })
     }
 }
@@ -271,8 +289,8 @@ pub enum ExamKind {
 pub struct ExamTime {
     code: String,
     exam_type: ExamKind,
-    start_date_time: DateTime,
-    end_date_time: DateTime,
+    start_date_time: DateTime<Local>,
+    end_date_time: DateTime<Local>,
 }
 impl ExamTime {
     fn from_string(info: String) -> Result<Self, regex::Error> {
@@ -307,7 +325,7 @@ impl ExamTime {
                 }
             },
             start_date_time: match caps.get(3) {
-                Some(capture) => match DateTime::from_str(capture.as_str()) {
+                Some(capture) => match capture.as_str().parse::<DateTime<Local>>() {
                     Ok(date_time) => date_time,
                     Err(_) => {
                         return Err(regex::Error::Syntax(
@@ -320,11 +338,11 @@ impl ExamTime {
                 }
             },
             end_date_time: match caps.get(4) {
-                Some(capture) => match DateTime::from_str(capture.as_str()) {
+                Some(capture) => match capture.as_str().parse::<DateTime<Local>>() {
                     Ok(date_time) => date_time,
                     Err(_) => {
                         return Err(regex::Error::Syntax(
-                            "end time syntax is incorrect".to_string(),
+                            "start time syntax is incorrect".to_string(),
                         ));
                     }
                 },
