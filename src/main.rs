@@ -18,5 +18,5 @@ async fn main() {
     dbg!(&m);
     let id = m.link.split('/').last().unwrap().to_string();
     let client = Client::new(id).await.unwrap();
-    dbg!(&client.timetable);
+    dbg!(&client);
 }

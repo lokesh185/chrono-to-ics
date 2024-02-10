@@ -1,14 +1,13 @@
 use super::responses::{CourseResponse, HolidayResponse, SectionResponse, TimeTableResponse};
 use chrono::{DateTime, Local, Utc, Weekday};
 use regex;
-use reqwest::header::LOCATION;
 use std::{fmt, str::FromStr, vec};
 
 #[derive(Debug, Clone)]
 struct DayError;
 impl fmt::Display for DayError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "invalid string to parse to day")
+        write!(f, "invalid string to parse to Weekday")
     }
 }
 #[derive(Debug)]
