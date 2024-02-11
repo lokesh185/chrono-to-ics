@@ -1,6 +1,7 @@
 use crate::api::data::TimeTable;
 use crate::api::responses::{CourseResponse, HolidayResponse, TimeTableResponse};
 use reqwest::Error;
+
 #[derive(Debug)]
 pub struct Client {
     id: String,
@@ -88,4 +89,54 @@ impl Client {
         };
         Ok(())
     }
+    // pub fn write_to_ics_file(&self) -> String {
+    //     let time_table = &self.timetable.unwrap();
+    //     let mut calendar = Calendar::new();
+    //     calendar.append_property(Property::new("X-WR-CALNAME", time_table.name.as_str()));
+
+    //     for course in &time_table.courses {
+    //         if let Some(lecture) = &course.lecture {
+    //             let lecture_event = create_event(course, lecture, time_table);
+    //             calendar.push(lecture_event);
+    //         }
+    //         if let Some(tutorial) = &course.tutorial {
+    //             let tutorial_event = create_event(course, tutorial, time_table);
+    //             calendar.push(tutorial_event);
+    //         }
+    //         if let Some(lab) = &course.lab {
+    //             let lab_event = create_event(course, lab, time_table);
+    //             calendar.push(lab_event);
+    //         }
+    //     }
+
+    //     calendar.to_string()
+    // }
 }
+
+// fn create_event(course: &Course, section: &Section, time_table: &TimeTable) -> Event {
+//     let mut event = Event::new();
+//     event.append_property(Property::new(
+//         "SUMMARY",
+//         &format!("{} - {}", &course.code, section.number),
+//     ));
+
+//     event.append_property(Property::new("DTSTART", &time_table.classwork_start.to_string()));
+//     event.append_property(Property::new("DTEND", &time_table.classwork_end.to_string()));
+
+//     // Add recurrence rule for each day
+//     for timing in &section.timings {
+//         let day_name = match timing.day {
+//             Weekday::Mon => "MO",
+//             Weekday::Tue => "TU",
+//             Weekday::Wed => "WE",
+//             Weekday::Thu => "TH",
+//             Weekday::Fri => "FR",
+//             Weekday::Sat => "SA",
+//             Weekday::Sun => "SU",
+//         };
+//         let rrule = format!("RRULE:FREQ=WEEKLY;BYDAY={}", day_name);
+//     }
+//     event.append_property(Property::new("RRULE", rrule));
+
+//     event
+// }

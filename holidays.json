@@ -6,15 +6,15 @@
     "holidays": [
         {
             "name": "Makar Sankranti (H)",
-            "date": "2024-01-15T00:00:00+05:30"
+            "date": "2024-01-15T00:00:00"
         },
         {
             "name": "Republic Day (H)",
-            "date": "2024-01-26T00:00:00+05:30"
+            "date": "2024-01-26T00:00:00"
         },
         {
             "name": "Maha Shivratri (H)",
-            "date": "2024-03-08T00:00:00+05:30"
+            "date": "2024-03-08T00:00:00"
         },
         {
             "name": "Holi (H)",

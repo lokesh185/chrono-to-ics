@@ -1,5 +1,7 @@
-use chrono_to_ics::api::client::Client;
+use chrono_to_ics::{api::client::Client, ics};
 use clap::Parser;
+use std::fs::File;
+use std::io::prelude::*;
 use std::path::PathBuf;
 // #[command(author, version, about, long_about = None)]
 /// program that converts chrono factorem calendars to .ics files
@@ -18,5 +20,11 @@ async fn main() {
     dbg!(&m);
     let id = m.link.split('/').last().unwrap().to_string();
     let client = Client::new(id).await.unwrap();
-    dbg!(&client);
+    // dbg!(&client);
+    let timetable_str = ics::make_calendar(&client.timetable.unwrap());
+
+    let mut file = File::create("timetable.ics").expect("Unable to create file");
+    file.write_all(timetable_str.as_bytes())
+        .expect("Unable to write to file");
+    // dbg!(test_stuff(&client.timetable.unwrap()));
 }

@@ -1,8 +1,7 @@
 use super::responses::{CourseResponse, HolidayResponse, SectionResponse, TimeTableResponse};
-use chrono::{DateTime, Local, Utc, Weekday};
+use chrono::{DateTime, Utc, Weekday};
 use regex;
 use std::{fmt, str::FromStr, vec};
-
 #[derive(Debug, Clone)]
 struct DayError;
 impl fmt::Display for DayError {
@@ -34,10 +33,10 @@ impl FromStr for WeekdayWrapper {
 }
 #[derive(Debug, Clone)]
 pub struct Timing {
-    day: Weekday,
-    classroom: String,
-    start: u8,
-    end: u8,
+    pub day: Weekday,
+    pub classroom: String,
+    pub start: u8,
+    pub end: u8,
 }
 
 impl Timing {
@@ -68,9 +67,9 @@ impl Timing {
 }
 #[derive(Debug)]
 pub struct Section {
-    number: i32,
-    instructors: Vec<String>,
-    timings: Vec<Timing>,
+    pub number: i32,
+    pub instructors: Vec<String>,
+    pub timings: Vec<Timing>,
 }
 impl Section {
     pub fn optimize_timings(&mut self) {
@@ -97,8 +96,8 @@ impl Section {
 #[derive(Debug, Default)]
 pub struct Course {
     id: String,
-    code: String,
-    name: String,
+    pub code: String,
+    pub name: String,
     pub lecture: Option<Section>,
     pub tutorial: Option<Section>,
     pub lab: Option<Section>,
@@ -167,25 +166,25 @@ impl Course {
     }
 }
 #[derive(Debug, Default)]
-struct Holiday {
-    name: String,
-    date: DateTime<Local>,
+pub struct Holiday {
+    pub name: String,
+    pub date: DateTime<Utc>,
 }
 #[derive(Debug)]
 struct TimeTableChange {
     day: Weekday,
-    date: DateTime<Local>,
+    date: DateTime<Utc>,
 }
 #[derive(Debug)]
 pub struct TimeTable {
-    id: String,
-    name: String,
-    acad_year: i32,
-    pub classwork_start: DateTime<Local>,
-    pub classwork_end: DateTime<Local>,
-    pub midsem_dates: Option<(DateTime<Local>, DateTime<Local>)>,
-    courses: Vec<Course>,
-    holidays: Vec<Holiday>,
+    pub id: String,
+    pub name: String,
+    pub acad_year: i32,
+    pub classwork_start: DateTime<Utc>,
+    pub classwork_end: DateTime<Utc>,
+    pub midsem_dates: Option<(DateTime<Utc>, DateTime<Utc>)>,
+    pub courses: Vec<Course>,
+    pub holidays: Vec<Holiday>,
     time_table_changes: Vec<TimeTableChange>,
 }
 impl TimeTable {
@@ -236,11 +235,7 @@ impl TimeTable {
             .filter_map(|holiday_string| {
                 Some(Holiday {
                     name: holiday_string.name.clone(),
-                    date: holiday_string
-                        .date
-                        .as_str()
-                        .parse::<DateTime<Local>>()
-                        .ok()?,
+                    date: holiday_string.date.as_str().parse::<DateTime<Utc>>().ok()?,
                 })
             })
             .collect::<Vec<Holiday>>();
@@ -250,7 +245,7 @@ impl TimeTable {
             .iter()
             .filter_map(|ttcr| {
                 Some(TimeTableChange {
-                    date: ttcr.date.parse::<DateTime<Local>>().ok()?,
+                    date: ttcr.date.parse::<DateTime<Utc>>().ok()?,
                     day: ttcr.day.parse::<WeekdayWrapper>().ok()?.to_weekday(),
                 })
             })
@@ -263,8 +258,8 @@ impl TimeTable {
             holidays,
             time_table_changes,
             midsem_dates: if let (Ok(midsem_st), Ok(midsem_end)) = (
-                holiday_response.midsem_start.parse::<DateTime<Local>>(),
-                holiday_response.midsem_end.parse::<DateTime<Local>>(),
+                holiday_response.midsem_start.parse::<DateTime<Utc>>(),
+                holiday_response.midsem_end.parse::<DateTime<Utc>>(),
             ) {
                 Some((midsem_st, midsem_end))
             } else {
@@ -272,11 +267,11 @@ impl TimeTable {
             },
             classwork_start: holiday_response
                 .classwork_start
-                .parse::<DateTime<Local>>()
+                .parse::<DateTime<Utc>>()
                 .ok()?,
             classwork_end: holiday_response
                 .classwork_end
-                .parse::<DateTime<Local>>()
+                .parse::<DateTime<Utc>>()
                 .ok()?,
         })
     }
@@ -288,8 +283,8 @@ pub enum ExamKind {
 pub struct ExamTime {
     code: String,
     exam_type: ExamKind,
-    start_date_time: DateTime<Local>,
-    end_date_time: DateTime<Local>,
+    start_date_time: DateTime<Utc>,
+    end_date_time: DateTime<Utc>,
 }
 impl ExamTime {
     fn from_string(info: String) -> Result<Self, regex::Error> {
@@ -324,7 +319,7 @@ impl ExamTime {
                 }
             },
             start_date_time: match caps.get(3) {
-                Some(capture) => match capture.as_str().parse::<DateTime<Local>>() {
+                Some(capture) => match capture.as_str().parse::<DateTime<Utc>>() {
                     Ok(date_time) => date_time,
                     Err(_) => {
                         return Err(regex::Error::Syntax(
@@ -337,7 +332,7 @@ impl ExamTime {
                 }
             },
             end_date_time: match caps.get(4) {
-                Some(capture) => match capture.as_str().parse::<DateTime<Local>>() {
+                Some(capture) => match capture.as_str().parse::<DateTime<Utc>>() {
                     Ok(date_time) => date_time,
                     Err(_) => {
                         return Err(regex::Error::Syntax(

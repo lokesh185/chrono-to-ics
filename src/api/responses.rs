@@ -4,8 +4,8 @@ use serde::Deserialize;
 pub struct TimeTableResponse {
     pub id: String,
     pub name: String,
-    degrees: Vec<String>,
-    year: i32,
+    // degrees: Vec<String>,
+    // year: i32,
     pub acadYear: i32,
     pub sections: Vec<SectionResponse>,
     pub timings: Vec<String>,
