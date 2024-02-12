@@ -12,8 +12,7 @@ struct EventGen {
     recurence_end: DateTime<Utc>,
     exdates: Vec<DateTime<Utc>>,
     location: String,
-}
-
+} // he;p
 impl EventGen {
     fn new(
         summary: String,
@@ -24,7 +23,7 @@ impl EventGen {
         holidays: &[DateTime<Utc>],
     ) -> Vec<Self> {
         let mut timing_sets: Vec<Vec<Timing>> = vec![vec![]];
-        // make vec<timing> into sets where the start and end are the same
+        // make vec<timing> into sets where the both start and end are the same
         section.timings.iter().for_each(|timing| {
             let mut found = false;
             'outer: for inner_timing_set in timing_sets.iter_mut() {
@@ -42,7 +41,6 @@ impl EventGen {
         });
         // let exdates = holidays.iter().map(|holiday| holiday.date.with_hour(1+timing_vec.first()?.start))
 
-        dbg!(&timing_sets);
         timing_sets
             .iter()
             .filter_map(|timing_vec| {
@@ -53,21 +51,21 @@ impl EventGen {
                 Some(EventGen {
                     summary: summary.clone(),
                     description: description.clone(),
-                    start_time: start_time(sem_start, &weekday_vec, timing_vec.first()?.start),
-                    end_time: end_time(sem_start, &weekday_vec, timing_vec.first()?.end),
+                    start_time: start_time(sem_start, &weekday_vec, timing_vec.first()?.start)?,
+                    end_time: end_time(sem_start, &weekday_vec, timing_vec.first()?.end)?,
                     weekdays: weekday_vec,
                     recurence_end: sem_end.clone(),
                     exdates: holidays
                         .iter()
-                        .map(|date_time| {
-                            date_time
-                                .with_hour(1 + timing_vec.first().unwrap().start as u32)
-                                .unwrap()
-                                .checked_add_days(Days::new(1))
-                                .unwrap()
+                        .filter_map(|date_time| {
+                            Some(
+                                date_time
+                                    .with_hour(1 + timing_vec.first()?.start as u32)?
+                                    .checked_add_days(Days::new(1))?,
+                            )
                         })
                         .collect::<Vec<DateTime<Utc>>>(),
-                    location: timing_vec.first().unwrap().classroom.clone(),
+                    location: timing_vec.first()?.classroom.clone(),
                 })
             })
             .collect::<Vec<Self>>()
@@ -135,27 +133,28 @@ fn start_time(
     sem_start: &DateTime<Utc>,
     weekday: &Vec<Weekday>,
     timing_start: u8,
-) -> DateTime<Utc> {
+) -> Option<DateTime<Utc>> {
     let mut date = sem_start.clone();
     while !weekday.contains(&date.weekday()) {
         date = date + Duration::days(1);
     }
-    // set hours from 1 -> 8am ,2 ->9 am
-    //set hour to 2:30 am
-    date = date.with_hour(1 + timing_start as u32).unwrap();
-    date = date.with_minute(30).unwrap();
-    date
+    // set hours from 1 -> 2:30am ,2 ->3:30 am
+    // 2:30 am UTC = 8 am IST
+    Some(date.with_hour(1 + timing_start as u32)?.with_minute(30)?)
 }
-fn end_time(sem_start: &DateTime<Utc>, weekday: &Vec<Weekday>, timing_start: u8) -> DateTime<Utc> {
+fn end_time(
+    sem_start: &DateTime<Utc>,
+    weekday: &Vec<Weekday>,
+    timing_start: u8,
+) -> Option<DateTime<Utc>> {
     let mut date = sem_start.clone();
     while !weekday.contains(&date.weekday()) {
         date = date + Duration::days(1);
     }
     // set hours from 1 -> 3:20am ,2 ->4:20 am
-    //set hour to 3:30 am
-    date = date.with_hour(2 + timing_start as u32).unwrap();
-    date = date.with_minute(20).unwrap();
-    date
+    // 3:20 am UTC = 8:50 am IST
+
+    Some(date.with_hour(2 + timing_start as u32)?.with_minute(20)?)
 }
 
 fn generate_exam_event(
@@ -163,10 +162,17 @@ fn generate_exam_event(
     exam_end: &DateTime<Utc>,
     summary: &str,
 ) -> Event {
+    // uses the current because crux didnt update years in their exam datetimes .
+    // maybe will not work if the semester is across 2 calendar years.
+    let cur_year = Utc::now().year();
     Event::new()
         .summary(summary)
-        .starts(*exam_start)
-        .ends(*exam_end)
+        .starts(
+            exam_start
+                .with_year(cur_year)
+                .unwrap_or_else(|| *exam_start),
+        )
+        .ends(exam_end.with_year(cur_year).unwrap_or_else(|| *exam_end))
         .description("something ")
         .done()
 }
@@ -183,7 +189,12 @@ pub fn make_calendar(time_table: &TimeTable) -> String {
     if let Some((mut mid_sem_start, mid_sem_end)) = time_table.midsem_dates {
         while mid_sem_start <= mid_sem_end {
             holidays.push(mid_sem_start.clone());
-            mid_sem_start = mid_sem_start.checked_add_days(Days::new(1)).unwrap();
+            mid_sem_start = match mid_sem_start.checked_add_days(Days::new(1)) {
+                Some(new_mid_sem_date) => new_mid_sem_date,
+                None => {
+                    break;
+                }
+            };
         }
     }
     let mut events: Vec<EventGen> = vec![];

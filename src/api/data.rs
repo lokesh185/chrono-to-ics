@@ -41,22 +41,19 @@ pub struct Timing {
 
 impl Timing {
     pub fn from_string(info: &str) -> Option<Self> {
-        let re = regex::Regex::new(r"\w+ \w\d{3}:(\w\d{3}):(\w+):(\d+)").unwrap();
+        let re = regex::Regex::new(r"\w+ \w\d{3}:(\w\d{3}):(\w+):(\d+)").ok()?;
 
         let Some(caps) = re.captures(&info) else {
             return None;
         };
-        // dbg!(&caps);
-        // let code = caps.get(1).unwrap().as_str().to_string();
-        let classroom = caps.get(1).unwrap().as_str().to_string();
+        let classroom = caps.get(1)?.as_str().to_string();
         let day = caps
-            .get(2)
-            .unwrap()
+            .get(2)?
             .as_str()
             .parse::<WeekdayWrapper>()
-            .unwrap()
+            .ok()?
             .to_weekday();
-        let time = caps.get(3).unwrap().as_str().parse::<u8>().unwrap();
+        let time = caps.get(3)?.as_str().parse::<u8>().ok()?;
         Some(Timing {
             day,
             classroom,
@@ -290,11 +287,9 @@ impl ExamTime {
     fn from_string(info: String) -> Result<Self, regex::Error> {
         let re = regex::Regex::new(r"(\w+ \w\d{3})\|(\w{6})\|([^\|]+)\|(.+)")?;
 
-        let Some(caps) = re.captures(&info) else {
-            return Err(regex::Error::Syntax(
-                "required values not found in string".to_string(),
-            ));
-        };
+        let caps = re.captures(&info).ok_or_else(|| {
+            regex::Error::Syntax("required values not found in string".to_string())
+        })?;
         Ok(Self {
             code: match caps.get(1) {
                 Some(capture) => capture,

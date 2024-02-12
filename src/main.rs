@@ -17,14 +17,20 @@ struct Arguments {
 #[tokio::main]
 async fn main() {
     let m = Arguments::parse();
-    dbg!(&m);
-    let id = m.link.split('/').last().unwrap().to_string();
-    let client = Client::new(id).await.unwrap();
-    // dbg!(&client);
-    let timetable_str = ics::make_calendar(&client.timetable.unwrap());
+    let client = Client::new(get_id_from_link(&m.link).unwrap())
+        .await
+        .unwrap();
+    let timetable_string = ics::make_calendar(&client.timetable.unwrap());
 
-    let mut file = File::create("timetable.ics").expect("Unable to create file");
-    file.write_all(timetable_str.as_bytes())
-        .expect("Unable to write to file");
-    // dbg!(test_stuff(&client.timetable.unwrap()));
+    write_to_file(&timetable_string).unwrap();
+}
+
+fn get_id_from_link(link: &str) -> Option<String> {
+    Some(link.split('/').last()?.to_string())
+}
+
+fn write_to_file(data: &String) -> Option<()> {
+    let mut file = File::create("timetable.ics").unwrap();
+    file.write_all(data.as_bytes()).unwrap();
+    Some(())
 }

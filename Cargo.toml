@@ -15,7 +15,7 @@ serde_json = "1.0"
 chrono = "0.4.33"
 regex = "1.10.3"
 icalendar = { version = "0.16.0", features = ["chrono-tz"] }
-eframe = "0.26"
+# eframe = "0.26"
 
 [profile.release]
 opt-level = 'z'   # Optimize for size
@@ -27,6 +27,6 @@ strip = true      # Strip symbols from binary*
 # name = "chrono-to-ics-cli"
 # path = "src/main.rs"
 
-# [[bin]]
-# name = "chrono-to-ics-gui"
-# path = "src/gui.rs"
+[[bin]]
+name = "chrono-to-ics-gui"
+path = "src/gui.rs"
