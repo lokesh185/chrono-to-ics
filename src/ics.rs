@@ -162,17 +162,10 @@ fn generate_exam_event(
     exam_end: &DateTime<Utc>,
     summary: &str,
 ) -> Event {
-    // uses the current because crux didnt update years in their exam datetimes .
-    // maybe will not work if the semester is across 2 calendar years.
-    let cur_year = Utc::now().year();
     Event::new()
         .summary(summary)
-        .starts(
-            exam_start
-                .with_year(cur_year)
-                .unwrap_or_else(|| *exam_start),
-        )
-        .ends(exam_end.with_year(cur_year).unwrap_or_else(|| *exam_end))
+        .starts(*exam_start)
+        .ends(*exam_end)
         .description("something ")
         .done()
 }
