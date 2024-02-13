@@ -1,18 +1,18 @@
 use crate::api::data::TimeTable;
 use crate::api::responses::{CourseResponse, HolidayResponse, TimeTableResponse};
+use reqwest::blocking::Client;
 use reqwest::Error;
-
 #[derive(Debug)]
-pub struct Client {
-    id: String,
+pub struct ApiClient {
+    pub id: String,
     ttr: Option<TimeTableResponse>,
     cr: Option<CourseResponse>,
     holiday_response: Option<HolidayResponse>,
     pub timetable: Option<TimeTable>,
 }
 
-impl Client {
-    pub async fn new(id: String) -> Result<Self, Error> {
+impl ApiClient {
+    pub fn new(id: String) -> Result<Self, Error> {
         let mut client = Self {
             id,
             ttr: None,
@@ -21,14 +21,14 @@ impl Client {
             timetable: None,
         };
 
-        client.fetch_courses().await?;
-        client.fetch_timetable().await?;
-        client.fetch_holidays().await?;
-        client.update_time_table();
+        client.fetch_courses()?;
+        client.fetch_holidays()?;
+        // client.fetch_timetable()?;
+        // client.update_time_table();
         Ok(client)
     }
     // https://raw.githubusercontent.com/lokesh185/chrono-to-ics-prototype/master/holidays.json
-    fn update_time_table(&mut self) -> Option<()> {
+    pub fn update_time_table(&mut self) -> Option<()> {
         self.timetable = TimeTable::new(
             self.ttr.as_ref()?,
             self.cr.as_ref()?,
@@ -36,49 +36,31 @@ impl Client {
         );
         Some(())
     }
-    async fn fetch_holidays(&mut self) -> Result<(), Error> {
-        let client = reqwest::Client::new();
+    fn fetch_holidays(&mut self) -> Result<(), Error> {
+        let client = Client::new();
         let cresponse = client
             .get("https://raw.githubusercontent.com/lokesh185/chrono-to-ics-prototype/master/holidays.json")
-            .send()
-            .await
-            ?;
-        self.holiday_response = match cresponse.status() {
-            reqwest::StatusCode::OK => Some(cresponse.json::<HolidayResponse>().await?),
-            other => {
-                panic!("unknown error {}", other);
-            }
-        };
+            .send()?;
+        self.holiday_response = Some(cresponse.error_for_status()?.json::<HolidayResponse>()?);
         Ok(())
     }
-    async fn fetch_courses(&mut self) -> Result<(), Error> {
-        let client = reqwest::Client::new();
+    fn fetch_courses(&mut self) -> Result<(), Error> {
+        let client = Client::new();
         let cresponse = client
             .get("https://www.chrono.crux-bphc.com/api/course")
-            .send()
-            .await?;
-        self.cr = match cresponse.status() {
-            reqwest::StatusCode::OK => Some(cresponse.json::<CourseResponse>().await?),
-            other => {
-                panic!("unknown error {}", other);
-            }
-        };
+            .send()?;
+        self.cr = Some(cresponse.error_for_status()?.json::<CourseResponse>()?);
         Ok(())
     }
-    async fn fetch_timetable(&mut self) -> Result<(), Error> {
-        let client = reqwest::Client::new();
+    pub fn fetch_timetable(&mut self) -> Result<(), Error> {
+        let client = Client::new();
         let api_link = format!(
             "https://www.chrono.crux-bphc.com/api/timetable/{}",
             &self.id
         );
-        let response = client.get(api_link).send().await?;
+        let response = client.get(api_link).send()?;
 
-        self.ttr = Some(
-            response
-                .error_for_status()?
-                .json::<TimeTableResponse>()
-                .await?,
-        );
+        self.ttr = Some(response.error_for_status()?.json::<TimeTableResponse>()?);
         Ok(())
     }
 }

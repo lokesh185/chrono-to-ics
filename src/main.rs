@@ -1,4 +1,4 @@
-use chrono_to_ics::{api::client::Client, ics};
+use chrono_to_ics::{api::client::ApiClient, ics};
 use clap::Parser;
 use std::fs::File;
 use std::io::prelude::*;
@@ -8,18 +8,17 @@ use std::path::PathBuf;
 #[derive(Parser, Default, Debug)]
 struct Arguments {
     /// link to the chrono factorem public calendar
-    #[arg(short, default_value = "https://www.chrono.crux-bphc.com/view/9Hr7")]
+    #[arg(short)]
     link: String,
     /// path to the where the `.ics` file shall be saved
     #[arg(short, long, default_value = "content")]
     to_file: PathBuf,
 }
-#[tokio::main]
-async fn main() {
+fn main() {
     let m = Arguments::parse();
-    let client = Client::new(get_id_from_link(&m.link).unwrap())
-        .await
-        .unwrap();
+    let mut client = ApiClient::new(get_id_from_link(&m.link).unwrap()).unwrap();
+    client.fetch_timetable().unwrap();
+    client.update_time_table().unwrap();
     let timetable_string = ics::make_calendar(&client.timetable.unwrap());
 
     write_to_file(&timetable_string).unwrap();
