@@ -2,6 +2,7 @@
 use chrono_to_ics::api::client::ApiClient;
 use chrono_to_ics::ics;
 use eframe::egui;
+use std::fmt::Display;
 use std::fs::File;
 use std::io::prelude::*;
 pub fn main() -> Result<(), eframe::Error> {
@@ -114,14 +115,14 @@ enum GuiError {
     UnableToWriteData,
     InvalidTimeTableData,
 }
-impl GuiError {
-    fn to_string(&self) -> String {
+impl Display for GuiError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::InvalidLink => "your link is invalid".to_string(),
+            Self::InvalidLink => write!(f, "your link is invalid"),
             // Self::UnableToFetchTimetable => "unable to access internet".to_string(),
-            Self::UnableToFetchCourseData => "unable to access internet".to_string(),
-            Self::UnableToWriteData => "unable to write data".to_string(),
-            Self::InvalidTimeTableData => "timetable is invalid".to_string(),
+            Self::UnableToFetchCourseData => write!(f, "unable to access internet"),
+            Self::UnableToWriteData => write!(f, "unable to write data"),
+            Self::InvalidTimeTableData => write!(f, "timetable is invalid"),
         }
     }
 }

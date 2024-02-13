@@ -12,7 +12,7 @@ impl fmt::Display for DayError {
 #[derive(Debug)]
 struct WeekdayWrapper(Weekday);
 impl WeekdayWrapper {
-    pub fn to_weekday(self) -> Weekday {
+    pub fn consume_to_weekday(self) -> Weekday {
         self.0
     }
 }
@@ -52,7 +52,7 @@ impl Timing {
             .as_str()
             .parse::<WeekdayWrapper>()
             .ok()?
-            .to_weekday();
+            .consume_to_weekday();
         let time = caps.get(3)?.as_str().parse::<u8>().ok()?;
         Some(Timing {
             day,
@@ -142,22 +142,15 @@ impl Course {
     fn update_exam_time(&mut self, exam_times: &[ExamTime]) {
         exam_times
             .iter()
-            .filter_map(|f| match f.code.eq(&self.code) {
-                true => Some(f),
-                false => None,
-            })
+            .filter(|exam_time| exam_time.code.eq(&self.code))
             .for_each(|exam_time| match exam_time.exam_type {
                 ExamKind::Midsem => {
-                    self.midsem_date_time = Some((
-                        exam_time.start_date_time,
-                        exam_time.end_date_time,
-                    ))
+                    self.midsem_date_time =
+                        Some((exam_time.start_date_time, exam_time.end_date_time))
                 }
                 ExamKind::Compre => {
-                    self.compre_date_time = Some((
-                        exam_time.start_date_time,
-                        exam_time.end_date_time,
-                    ))
+                    self.compre_date_time =
+                        Some((exam_time.start_date_time, exam_time.end_date_time))
                 }
             });
     }
@@ -243,7 +236,11 @@ impl TimeTable {
             .filter_map(|ttcr| {
                 Some(TimeTableChange {
                     date: ttcr.date.parse::<DateTime<Utc>>().ok()?,
-                    day: ttcr.day.parse::<WeekdayWrapper>().ok()?.to_weekday(),
+                    day: ttcr
+                        .day
+                        .parse::<WeekdayWrapper>()
+                        .ok()?
+                        .consume_to_weekday(),
                 })
             })
             .collect::<Vec<TimeTableChange>>();

@@ -59,8 +59,8 @@ impl EventGen {
                         .iter()
                         .filter_map(|date_time| {
                             date_time
-                                    .with_hour(1 + timing_vec.first()?.start as u32)?
-                                    .checked_add_days(Days::new(1))
+                                .with_hour(1 + timing_vec.first()?.start as u32)?
+                                .checked_add_days(Days::new(1))
                         })
                         .collect::<Vec<DateTime<Utc>>>(),
                     location: timing_vec.first()?.classroom.clone(),
@@ -108,7 +108,7 @@ impl EventGen {
             .done()
     }
 }
-fn weekdays_to_string(weekdays: &Vec<Weekday>) -> String {
+fn weekdays_to_string(weekdays: &[Weekday]) -> String {
     weekdays
         .iter()
         .map(|weekday| {
@@ -129,7 +129,7 @@ fn weekdays_to_string(weekdays: &Vec<Weekday>) -> String {
 
 fn start_time(
     sem_start: &DateTime<Utc>,
-    weekday: &Vec<Weekday>,
+    weekday: &[Weekday],
     timing_start: u8,
 ) -> Option<DateTime<Utc>> {
     let mut date = *sem_start;
@@ -142,7 +142,7 @@ fn start_time(
 }
 fn end_time(
     sem_start: &DateTime<Utc>,
-    weekday: &Vec<Weekday>,
+    weekday: &[Weekday],
     timing_start: u8,
 ) -> Option<DateTime<Utc>> {
     let mut date = *sem_start;
