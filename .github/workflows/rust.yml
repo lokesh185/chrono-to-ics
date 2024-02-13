@@ -13,13 +13,18 @@ jobs:
     name: Build and upload
     runs-on: $\{\{ matrix.os \}\}
 
-    strategy:          - build: linux
+    strategy:          
+          - build: linux
             os: ubuntu-latest
             target: x86_64-unknown-linux-musl
 
           - build: macos
             os: macos-latest
             target: x86_64-apple-darwin
+            
+          - build: windows
+            os: windows-latest
+            target: x86_64-pc-windows-gnu
       matrix:
         # You can add more, for any target you'd like!
         include:
