@@ -54,15 +54,13 @@ impl EventGen {
                     start_time: start_time(sem_start, &weekday_vec, timing_vec.first()?.start)?,
                     end_time: end_time(sem_start, &weekday_vec, timing_vec.first()?.end)?,
                     weekdays: weekday_vec,
-                    recurence_end: sem_end.clone(),
+                    recurence_end: *sem_end,
                     exdates: holidays
                         .iter()
                         .filter_map(|date_time| {
-                            Some(
-                                date_time
+                            date_time
                                     .with_hour(1 + timing_vec.first()?.start as u32)?
-                                    .checked_add_days(Days::new(1))?,
-                            )
+                                    .checked_add_days(Days::new(1))
                         })
                         .collect::<Vec<DateTime<Utc>>>(),
                     location: timing_vec.first()?.classroom.clone(),
@@ -92,7 +90,7 @@ impl EventGen {
                 "RRULE",
                 format!(
                     "FREQ=WEEKLY;UNTIL={};BYDAY={}",
-                    self.recurence_end.format(UTC_DATE_TIME_FORMAT).to_string(),
+                    self.recurence_end.format(UTC_DATE_TIME_FORMAT),
                     weekdays_to_string(&self.weekdays)
                 )
                 .as_str(),
@@ -134,27 +132,27 @@ fn start_time(
     weekday: &Vec<Weekday>,
     timing_start: u8,
 ) -> Option<DateTime<Utc>> {
-    let mut date = sem_start.clone();
+    let mut date = *sem_start;
     while !weekday.contains(&date.weekday()) {
-        date = date + Duration::days(1);
+        date += Duration::days(1);
     }
     // set hours from 1 -> 2:30am ,2 ->3:30 am
     // 2:30 am UTC = 8 am IST
-    Some(date.with_hour(1 + timing_start as u32)?.with_minute(30)?)
+    date.with_hour(1 + timing_start as u32)?.with_minute(30)
 }
 fn end_time(
     sem_start: &DateTime<Utc>,
     weekday: &Vec<Weekday>,
     timing_start: u8,
 ) -> Option<DateTime<Utc>> {
-    let mut date = sem_start.clone();
+    let mut date = *sem_start;
     while !weekday.contains(&date.weekday()) {
-        date = date + Duration::days(1);
+        date += Duration::days(1);
     }
     // set hours from 1 -> 3:20am ,2 ->4:20 am
     // 3:20 am UTC = 8:50 am IST
 
-    Some(date.with_hour(2 + timing_start as u32)?.with_minute(20)?)
+    date.with_hour(2 + timing_start as u32)?.with_minute(20)
 }
 
 fn generate_exam_event(
@@ -181,7 +179,7 @@ pub fn make_calendar(time_table: &TimeTable) -> String {
 
     if let Some((mut mid_sem_start, mid_sem_end)) = time_table.midsem_dates {
         while mid_sem_start <= mid_sem_end {
-            holidays.push(mid_sem_start.clone());
+            holidays.push(mid_sem_start);
             mid_sem_start = match mid_sem_start.checked_add_days(Days::new(1)) {
                 Some(new_mid_sem_date) => new_mid_sem_date,
                 None => {

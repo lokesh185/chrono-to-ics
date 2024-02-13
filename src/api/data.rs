@@ -43,7 +43,7 @@ impl Timing {
     pub fn from_string(info: &str) -> Option<Self> {
         let re = regex::Regex::new(r"\w+ \w\d{3}:(\w\d{3}):(\w+):(\d+)").ok()?;
 
-        let Some(caps) = re.captures(&info) else {
+        let Some(caps) = re.captures(info) else {
             return None;
         };
         let classroom = caps.get(1)?.as_str().to_string();
@@ -129,7 +129,7 @@ impl Course {
         let mut new_section = Section {
             number: section_response.number,
             instructors: section_response.instructors.clone(),
-            timings: timings,
+            timings,
         };
         new_section.optimize_timings();
         match section_response.type_name.as_str() {
@@ -149,14 +149,14 @@ impl Course {
             .for_each(|exam_time| match exam_time.exam_type {
                 ExamKind::Midsem => {
                     self.midsem_date_time = Some((
-                        exam_time.start_date_time.into(),
-                        exam_time.end_date_time.into(),
+                        exam_time.start_date_time,
+                        exam_time.end_date_time,
                     ))
                 }
                 ExamKind::Compre => {
                     self.compre_date_time = Some((
-                        exam_time.start_date_time.into(),
-                        exam_time.end_date_time.into(),
+                        exam_time.start_date_time,
+                        exam_time.end_date_time,
                     ))
                 }
             });
