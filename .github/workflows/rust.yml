@@ -13,7 +13,13 @@ jobs:
     name: Build and upload
     runs-on: $\{\{ matrix.os \}\}
 
-    strategy:
+    strategy:          - build: linux
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+
+          - build: macos
+            os: macos-latest
+            target: x86_64-apple-darwin
       matrix:
         # You can add more, for any target you'd like!
         include:
@@ -56,7 +62,7 @@ jobs:
         shell: bash
         run: |
           # Replace with the name of your binary
-          binary_name="<BINARY_NAME>"
+          binary_name="chrono-to-ics-gui"
 
           dirname="$binary_name-$\{\{ env.VERSION \}\}-$\{\{ matrix.target \}\}"
           mkdir "$dirname"
