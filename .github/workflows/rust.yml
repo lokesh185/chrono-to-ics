@@ -46,7 +46,7 @@ jobs:
         with:
           use-cross: true
           command: build
-          args: --verbose --release --target $\{\{ matrix.target \}\}
+          args: --verbose --release --bin chrono-to-ics-gui --target $\{\{ matrix.target \}\}
 
       - name: Build archive
         shell: bash
