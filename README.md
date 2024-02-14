@@ -10,10 +10,6 @@ this is a app that converts chorono-factorem calendars to `ics` format to be use
 - [x] fetching holidays and days when timetable is changed. 
 - [x] writing to the `.ics` file using [ical](https://crates.io/crates/ical) crate. 
 - [x] storage of `holidays.json`. 
-  
+- [x] gui for the app.
 ## ToDo : 
 - [ ] implementing timetable changes
-- [ ] gui for the app.
-  
-### GUI 
-it just needs a one text box for the chorno link , a folder dialog box and a button . 
