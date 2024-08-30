@@ -1,28 +1,28 @@
 {
-    "classwork_start": "2024-07-02T00:00:00+05:30",
+    "classwork_start": "2024-08-02T00:00:00+05:30",
     "classwork_end": "2024-11-29T00:00:00+05:30",
     "midsem_start": "2024-10-03T00:00:00+05:30",
     "midsem_end": "2024-10-09T00:00:00+05:30",
     "holidays": [
         {
             "name": "Independence Day (H)",
-            "date": "2024-07-15T00:00:00+05:30"
+            "date": "2024-08-15T00:00:00+05:30"
         },
         {
             "name": "Raksha Bandhan (H)",
-            "date": "2024-07-19T00:00:00+05:30"
+            "date": "2024-08-19T00:00:00+05:30"
         },
         {
             "name": "Janmashtami (H)",
-            "date": "2024-07-26T00:00:00+05:30"
+            "date": "2024-08-26T00:00:00+05:30"
         },
         {
             "name": "Ganesh Chaturthi (H) ",
-            "date": "2024-08-07T00:00:00+05:30"
+            "date": "2024-09-07T00:00:00+05:30"
         },
         {
             "name": "Id-e-Milad (Prophet Mohammad’s Birthday) (H)",
-            "date": "2024-08-16T00:00:00+05:30"
+            "date": "2024-09-16T00:00:00+05:30"
         },
         {
             "name": "Mahatma Gandhi's Birthday (H) ",
