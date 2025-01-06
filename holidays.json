@@ -1,44 +1,56 @@
 {
-    "classwork_start": "2024-08-02T00:00:00+05:30",
-    "classwork_end": "2024-11-29T00:00:00+05:30",
-    "midsem_start": "2024-10-03T00:00:00+05:30",
-    "midsem_end": "2024-10-09T00:00:00+05:30",
+    "classwork_start": "2025-01-07T00:00:00+05:30",
+    "classwork_end": "2025-04-29T00:00:00+05:30",
+    "midsem_start": "2025-03-03T00:00:00+05:30",
+    "midsem_end": "2025-03-08T00:00:00+05:30",
     "holidays": [
         {
-            "name": "Independence Day (H)",
-            "date": "2024-08-15T00:00:00+05:30"
+            "name": "Makar Sankranti (H)",
+            "date": "2025-01-14T00:00:00+05:30"
         },
         {
-            "name": "Raksha Bandhan (H)",
-            "date": "2024-08-19T00:00:00+05:30"
+            "name": "Republic Day (H)",
+            "date": "2025-01-26T00:00:00+05:30"
         },
         {
-            "name": "Janmashtami (H)",
-            "date": "2024-08-26T00:00:00+05:30"
+            "name": "Maha Shivratri (H)",
+            "date": "2025-02-26T00:00:00+05:30"
         },
         {
-            "name": "Ganesh Chaturthi (H) ",
-            "date": "2024-09-07T00:00:00+05:30"
+            "name": "Holi (H)",
+            "date": "2025-03-14T00:00:00+05:30"
         },
         {
-            "name": "Id-e-Milad (Prophet Mohammad’s Birthday) (H)",
-            "date": "2024-09-16T00:00:00+05:30"
+            "name": "Ugadi (H)",
+            "date": "2025-03-30T00:00:00+05:30"
         },
         {
-            "name": "Mahatma Gandhi's Birthday (H) ",
-            "date": "2024-10-02T00:00:00+05:30"
+            "name": "Id-ul-Fitr (H)",
+            "date": "2025-03-31T00:00:00+05:30"
         },
         {
-            "name": "Dussehra (H)",
-            "date": "2024-10-12T00:00:00+05:30"
+            "name": "Ram Navami (H)",
+            "date": "2025-04-06T00:00:00+05:30"
         },
         {
-            "name": "Diwali (H)",
-            "date": "2024-10-31T00:00:00+05:30"
+            "name": "Mahavir Jayanti (H)",
+            "date": "2025-04-10T00:00:00+05:30"
         },
         {
-            "name": "Gurunanak's Birthday (H)",
-            "date": "2024-11-15T00:00:00+05:30"
+            "name": "Ambedkar Jayanti (H)",
+            "date": "2025-04-14T00:00:00+05:30"
+        },
+        {
+            "name": "Good Friday (H)",
+            "date": "2025-04-18T00:00:00+05:30"
+        },
+        {
+            "name": "Buddha Purnima (H)",
+            "date": "2025-05-12T00:00:00+05:30"
+        },
+        {
+            "name": "Id-ul-Zuha (H)",
+            "date": "2025-06-07T00:00:00+05:30"
         }
     ],
     "time_table_changes": []
